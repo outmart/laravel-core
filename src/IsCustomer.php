@@ -2,11 +2,18 @@
 
 namespace OutMart\Laravel\Customers;
 
-trait HasCustomer
+use App\Models\OutMart\Customer;
+
+trait IsCustomer
 {
+    public function customers()
+    {
+        return $this->morphMany(config('outmart.customers.model', Customer::class), 'customerable');
+    }
+
     public function customer()
     {
-        return $this->morphOne(config('outmart.customers.model'), 'customerable');
+        return $this->morphOne(config('outmart.customers.model', Customer::class), 'customerable');
     }
 
     public function signCustomer(array $metadata = null)
