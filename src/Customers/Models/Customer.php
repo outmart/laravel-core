@@ -30,14 +30,4 @@ class Customer extends Model
     protected $casts = [
         'metadata' => 'array',
     ];
-
-    public function customerable()
-    {
-        return $this->morphTo();
-    }
-
-    public function addresses()
-    {
-        return $this->hasMany(Address::class);
-    }
 }
