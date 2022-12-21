@@ -4,11 +4,13 @@ namespace Bidaea\OutMart\Modules\Baskets\Manage;
 
 use Bidaea\OutMart\Modules\Baskets\Enums\Status;
 use Bidaea\OutMart\Modules\Baskets\Models\Basket;
+use Exception;
 use Illuminate\Support\Str;
 
 class BasketMethodManager
 {
     private $basketModel;
+    private $quote;
 
     public function __construct(string $basket_ulid = null, string $currency = 'USD', $customer = null)
     {
@@ -22,7 +24,7 @@ class BasketMethodManager
 
         if (!$basket) {
             $basket = Basket::create([
-                'ulid' => (string) Str::ulid(),
+                'ulid' => $basket_ulid ?? (string) Str::ulid(),
                 'currency' => $currency,
                 'status' => Status::OPENED->value,
             ]);
@@ -40,13 +42,13 @@ class BasketMethodManager
         $this->basketModel = $basket;
     }
 
-    public function addQuotes(int $product_id, int $quantity = 1)
+    public function addQuotes(int $product_sku, int $quantity = 1)
     {
-        $item = $this->basketModel->quotes()->where('product_id', $product_id)->first();
+        $item = $this->basketModel->quotes()->where('product_sku', $product_sku)->first();
 
         if (!$item) {
             $this->basketModel->quotes()->create([
-                'product_id' => $product_id,
+                'product_sku' => $product_sku,
                 'quantity' => $quantity,
             ]);
         }
@@ -61,6 +63,12 @@ class BasketMethodManager
     public function quotes()
     {
         return $this->basketModel->quotes;
+    }
+
+    public function quote($quote_id)
+    {
+        $this->quote = $this->quotes()->find($quote_id);
+        return $this;
     }
 
     public function getBasket()
@@ -106,5 +114,31 @@ class BasketMethodManager
     public function getBasketUlid(): String
     {
         return $this->basketModel->ulid;
+    }
+
+    public function increase($quantity = 1)
+    {
+        if (!$this->quote) {
+            throw new Exception('This quote is not found');
+        }
+
+        if ($this->quote->quantity >= config('outmart.baskets.max_quote')) {
+            return 'ISMAXQUOTE';
+        }
+
+        return $this->quote->increment('quantity', $quantity);
+    }
+
+    public function decrease($quantity = 1)
+    {
+        if (!$this->quote) {
+            throw new Exception('This quote is not found');
+        }
+
+        if ($this->quote->quantity > 1) {
+            return $this->quote->decrement('quantity', $quantity);
+        }
+
+        return $this->quote->delete();
     }
 }
