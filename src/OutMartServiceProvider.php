@@ -1,9 +1,7 @@
 <?php
 
-namespace Bidaea\OutMart;
+namespace OutMart;
 
-use Bidaea\OutMart\Modules\Baskets\Manage\BasketManager;
-use Bidaea\OutMart\Modules\Customers\Manage\CustomerManager;
 use Illuminate\Support\ServiceProvider;
 
 class OutMartServiceProvider extends ServiceProvider
@@ -15,13 +13,7 @@ class OutMartServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('customer', function () {
-            return new CustomerManager();
-        });
-
-        $this->app->singleton('basket', function () {
-            return new BasketManager();
-        });
+        $this->mergeConfigFrom(__DIR__ . '/../config/outmart.php', 'outmart');
     }
 
     /**
@@ -31,6 +23,12 @@ class OutMartServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // 
+        if ($this->app->runningInConsole()) {
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
+            $this->publishes([
+                __DIR__ . '/../config/outmart.php' => config_path('outmart.php'),
+            ], ['outmart', 'outmart-config']);
+        }
     }
 }
